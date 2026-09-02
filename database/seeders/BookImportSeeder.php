@@ -24,9 +24,9 @@ class BookImportSeeder extends Seeder
         // Get headers
         $header = fgetcsv($handle, 0, ';');
         
-        $user = User::where('email', 'test@example.com')->first();
+        $user = User::where('email', 'info@wmemtipp.de')->first();
         if (!$user) {
-            $this->command->error('Test user not found! Please run UserSeeder first.');
+            $this->command->error('User info@wmemtipp.de not found! Please run UserSeeder first.');
             return;
         }
 
