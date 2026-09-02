@@ -21,7 +21,7 @@ class BookController extends Controller
             'totalPages' => $user->books()->sum('pages'),
             'booksByYear' => $user->books()
                 ->whereNotNull('finished_at')
-                ->selectRaw('strftime("%Y", finished_at) as year, count(*) as count')
+                ->selectRaw('YEAR(finished_at) as year, count(*) as count')
                 ->groupBy('year')
                 ->orderBy('year', 'desc')
                 ->get(),
@@ -35,7 +35,8 @@ class BookController extends Controller
             'recentBooks' => $user->books()->latest()->take(3)->get(),
             'booksThisMonth' => $user->books()
                 ->whereNotNull('finished_at')
-                ->whereRaw("strftime('%Y-%m', finished_at) = ?", [Carbon::now()->format('Y-m')])
+                ->whereMonth('finished_at', Carbon::now()->month)
+                ->whereYear('finished_at', Carbon::now()->year)
                 ->count(),
         ];
 
