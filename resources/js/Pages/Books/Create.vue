@@ -29,6 +29,7 @@ const isScannerActive = ref(false);
 let html5QrCode = null;
 
 const startScanner = async () => {
+    console.log("Scanner V5 starting...");
     isScannerActive.value = true;
     html5QrCode = new Html5Qrcode("reader");
     try {
@@ -42,14 +43,10 @@ const startScanner = async () => {
             aspectRatio: 1.777778,
             experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
-            },
-            videoConstraints: {
-                width: { min: 640, ideal: 1280, max: 1920 },
-                height: { min: 480, ideal: 720, max: 1080 },
-                facingMode: "environment"
             }
         };
 
+        // Minimal setup to avoid "3 keys" error
         await html5QrCode.start(
             { facingMode: "environment" },
             config,
