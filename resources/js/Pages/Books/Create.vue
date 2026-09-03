@@ -12,7 +12,7 @@ const form = useForm({
     author: '',
     isbn: '',
     pages: '',
-    format: 'Hardcover',
+    format: 'E-Book',
     published_year: '',
     genre: '',
     status: 'Ungelesen',
@@ -28,10 +28,44 @@ const searchResults = ref([]);
 const isScannerActive = ref(false);
 let html5QrCode = null;
 
+// Verfügbare Rückkameras (auf Multi-Lens-Handys z.B. Weitwinkel + Ultra-Weitwinkel/Makro)
+const availableCameras = ref([]);
+const selectedCameraId = ref(
+    typeof window !== 'undefined' ? (localStorage.getItem('preferredCameraId') || '') : ''
+);
+
 // Merkt sich den letzten Treffer, um Fehllesungen durch Mehrfachbestätigung
 // (derselbe Code muss zweimal hintereinander erkannt werden) herauszufiltern.
 let lastCandidate = null;
 let lastCandidateCount = 0;
+
+// Listet alle Kameras des Geräts auf (fragt bei Bedarf Kamera-Berechtigung an).
+// Wird nur beim ersten Öffnen des Scanners aufgerufen.
+const loadCameras = async () => {
+    if (availableCameras.value.length > 0) return;
+    try {
+        const cameras = await Html5Qrcode.getCameras();
+        availableCameras.value = cameras;
+        if (cameras.length > 0 && !selectedCameraId.value) {
+            // Als Startwert eine Rückkamera bevorzugen, falls das Label das hergibt.
+            const backCamera = cameras.find(c => /back|rück|environment/i.test(c.label || ''));
+            selectedCameraId.value = (backCamera || cameras[cameras.length - 1]).id;
+        }
+    } catch (err) {
+        console.warn("Kameras konnten nicht aufgelistet werden", err);
+    }
+};
+
+// Wird aufgerufen, wenn der Nutzer im Dropdown eine andere Kamera wählt,
+// während der Scanner bereits läuft: Scanner mit neuer Kamera neu starten.
+const switchCamera = async () => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('preferredCameraId', selectedCameraId.value);
+    }
+    if (!isScannerActive.value) return;
+    await stopScanner();
+    await startScanner();
+};
 
 // Prüfziffer einer ISBN-13 (EAN-13) validieren.
 const isValidIsbn13 = (code) => {
@@ -64,6 +98,7 @@ const isValidIsbn = (code) => isValidIsbn13(code) || isValidIsbn10(code);
 
 const startScanner = async () => {
     console.log("Scanner V5 starting...");
+    await loadCameras();
     isScannerActive.value = true;
     lastCandidate = null;
     lastCandidateCount = 0;
@@ -92,16 +127,24 @@ const startScanner = async () => {
                 useBarCodeDetectorIfSupported: true
             },
             // Höhere Auflösung + kontinuierlicher Autofokus, wo vom Gerät unterstützt.
+            // Bei einer konkret gewählten Kamera (deviceId) KEIN facingMode mitschicken,
+            // da sich beide Vorgaben sonst widersprechen können.
             videoConstraints: {
-                facingMode: "environment",
+                ...(selectedCameraId.value ? {} : { facingMode: "environment" }),
                 width: { ideal: 1920 },
                 height: { ideal: 1080 },
                 advanced: [{ focusMode: "continuous" }]
             }
         };
 
+        // Wenn eine konkrete Kamera ausgewählt wurde (z.B. Ultra-Weitwinkel/Makro-Linse),
+        // diese exakt anfordern statt nur generisch "irgendeine Rückkamera".
+        const cameraSource = selectedCameraId.value
+            ? { deviceId: { exact: selectedCameraId.value } }
+            : { facingMode: "environment" };
+
         await html5QrCode.start(
-            { facingMode: "environment" },
+            cameraSource,
             config,
             (decodedText) => {
                 const cleanCode = decodedText.replace(/[-\s]/g, "");
@@ -255,7 +298,19 @@ const submit = () => {
                         </div>
 
                         <!-- Scanner Container -->
-                        <div v-show="isScannerActive" id="reader" class="mt-4 border-2 border-accent rounded overflow-hidden"></div>
+                        <div v-show="isScannerActive" class="mt-4">
+                            <div v-if="availableCameras.length > 1" class="mb-2">
+                                <select v-model="selectedCameraId" @change="switchCamera" class="select select-bordered select-sm w-full">
+                                    <option v-for="cam in availableCameras" :key="cam.id" :value="cam.id">
+                                        {{ cam.label || ('Kamera ' + cam.id) }}
+                                    </option>
+                                </select>
+                                <p class="text-xs text-base-content/50 mt-1">
+                                    Stellt eine Kamera nicht scharf, probier eine andere aus der Liste (z.B. "Ultra Wide" oder "Macro").
+                                </p>
+                            </div>
+                            <div id="reader" class="border-2 border-accent rounded overflow-hidden"></div>
+                        </div>
 
                         <div class="flex gap-2 mt-2">
                             <input v-model="form.title" type="text" placeholder="Titel suchen..." class="input input-bordered flex-1" @keyup.enter="searchByTitle" />
