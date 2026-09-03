@@ -9,7 +9,7 @@ defineProps({
 
 <template>
 
-    <Head title="Dashboard" />
+    <Head :title="__('Dashboard')" />
 
     <AuthenticatedLayout>
 
@@ -19,7 +19,7 @@ defineProps({
 
 
                 <!-- Currently Reading -->
-                <div v-if="stats.currentBooks.length > 0" class="mb-12">
+                <div v-if="stats.currentBooks.length > 0">
 
                     <div v-for="book in stats.currentBooks" :key="book.id"
                         class="relative overflow-hidden shadow-2xl bg-base-300 text-base-content flex flex-col items-center">
@@ -30,7 +30,7 @@ defineProps({
                                 class="w-full h-full object-cover blur scale-110" />
                         </div>
                         <h3 class=" pt-3 text-xs font-bold uppercase tracking-widest text-base-content/60 mb-4 px-2">
-                        Am Lesen</h3>
+                        {{ __('Currently Reading') }}</h3>
                         <Link :href="route('books.edit', book.id)"
                             class="relative z-10 w-full flex flex-col items-center py-10">
                             <!-- Cover Image -->
@@ -58,21 +58,21 @@ defineProps({
                             <div class="w-full max-w-2xl px-6">
                                 <div class="bg-base-100/30 backdrop-blur-md rounded-lg divide-y divide-base-content/10 text-sm md:text-base">
                                     <div class="flex justify-between py-3 px-4">
-                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">Titel</span>
+                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">{{ __('Title') }}</span>
                                         <span class="text-right ml-4">{{ book.title }}</span>
                                     </div>
                                     <div class="flex justify-between py-3 px-4">
-                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">Autor</span>
+                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">{{ __('Author') }}</span>
                                         <span class="text-right ml-4">{{ book.author }}</span>
                                     </div>
 
                                     <div class="flex justify-between py-3 px-4">
-                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">Erscheinungsjahr</span>
-                                        <span class="text-right ml-4">{{ book.published_year || 'Unbekannt' }}</span>
+                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">{{ __('Published Year') }}</span>
+                                        <span class="text-right ml-4">{{ book.published_year || __('Unknown') }}</span>
                                     </div>
                                     <div class="flex justify-between py-3 px-4">
-                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">Art</span>
-                                        <span class="text-right ml-4">{{ book.format || 'Unbekannt' }}</span>
+                                        <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">{{ __('Format') }}</span>
+                                        <span class="text-right ml-4">{{ book.format || __('Unknown') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -81,9 +81,9 @@ defineProps({
                 </div>
 
                 <!-- Recently Added -->
-                <div v-if="stats.recentBooks.length > 0" class="mb-12">
+                <div v-if="stats.recentBooks.length > 0" class="mb-12 mt-12">
                     <h3 class="text-xs font-bold uppercase tracking-widest text-base-content/60 mb-4 px-2">
-                        Zuletzt hinzugefügt</h3>
+                        {{ __('Recently Added') }}</h3>
                     <div class="grid grid-cols-3 gap-3">
                         <Link v-for="book in stats.recentBooks" :key="book.id" :href="route('books.edit', book.id)"
                             class="aspect-2/3 overflow-auto  shadow-lg transform transition active:scale-95 bg-base-200 border">
@@ -97,22 +97,22 @@ defineProps({
                 <!-- Stat Cards -->
                 <div class="grid grid-cols-2  lg:grid-cols-4 gap-4 mb-8">
                     <div class="stat bg-base-100 shadow rounded-lg p-6">
-                        <div class="stat-title text-base-content/60">Bücher insgesamt</div>
+                        <div class="stat-title text-base-content/60">{{ __('Total Books') }}</div>
                         <div class="stat-value text-primary text-3xl font-bold">{{ stats.totalBooks }}</div>
                     </div>
 
                     <div class="stat bg-base-100 shadow rounded-lg p-6">
-                        <div class="stat-title text-base-content/60">Seiten insgesamt</div>
+                        <div class="stat-title text-base-content/60">{{ __('Total Pages') }}</div>
                         <div class="stat-value text-secondary text-3xl font-bold">{{ stats.totalPages }}</div>
                     </div>
 
                     <div class="stat bg-base-100 shadow rounded-lg p-6">
-                        <div class="stat-title text-base-content/60">Ø Tage pro Buch</div>
+                        <div class="stat-title text-base-content/60">{{ __('Avg days per book') }}</div>
                         <div class="stat-value text-accent text-3xl font-bold">{{ stats.avgTimePerBook }}</div>
                     </div>
 
                     <div class="stat bg-base-100 shadow rounded-lg p-6">
-                        <div class="stat-title text-base-content/60">Diesen Monat</div>
+                        <div class="stat-title text-base-content/60">{{ __('This Month') }}</div>
                         <div class="stat-value text-info text-3xl font-bold">{{ stats.booksThisMonth }}</div>
                     </div>
                 </div>
@@ -120,13 +120,13 @@ defineProps({
                 <!-- Yearly Stats Table -->
                 <div class="bg-base-100 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <h3 class="text-lg font-bold mb-4 text-base-content">Bücher pro Jahr</h3>
+                        <h3 class="text-lg font-bold mb-4 text-base-content">{{ __('Books per Year') }}</h3>
                         <div class="overflow-x-auto">
                             <table class="table w-full text-base-content">
                                 <thead>
                                     <tr class="text-base-content/60">
-                                        <th>Jahr</th>
-                                        <th>Bücher</th>
+                                        <th>{{ __('Year') }}</th>
+                                        <th>{{ __('Books') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

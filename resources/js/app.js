@@ -22,6 +22,19 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .mixin({
+                methods: {
+                    __(key, replace = {}) {
+                        let translation = this.$page.props.translations[key] || key;
+
+                        Object.keys(replace).forEach((key) => {
+                            translation = translation.replace(`:${key}`, replace[key]);
+                        });
+
+                        return translation;
+                    },
+                },
+            })
             .mount(el);
     },
     progress: {

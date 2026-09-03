@@ -38,19 +38,19 @@ const showingNavigationDropdown = ref(false);
                                     :href="route('dashboard')"
                                     :active="route().current('dashboard')"
                                 >
-                                    Dashboard
+                                    Start
                                 </NavLink>
                                 <NavLink
                                     :href="route('books.index')"
                                     :active="route().current('books.index')"
                                 >
-                                    Bücher
+                                    {{ __('Books') }}
                                 </NavLink>
                                 <NavLink
                                     :href="route('books.create')"
                                     :active="route().current('books.create')"
                                 >
-                                    Hinzufügen
+                                    {{ __('Add') }}
                                 </NavLink>
                             </div>
                         </div>
@@ -87,14 +87,14 @@ const showingNavigationDropdown = ref(false);
                                         <DropdownLink
                                             :href="route('profile.edit')"
                                         >
-                                            Profile
+                                            {{ __('Profile') }}
                                         </DropdownLink>
                                         <DropdownLink
                                             :href="route('logout')"
                                             method="post"
                                             as="button"
                                         >
-                                            Log Out
+                                            {{ __('Log Out') }}
                                         </DropdownLink>
                                     </template>
                                 </Dropdown>
@@ -157,19 +157,19 @@ const showingNavigationDropdown = ref(false);
                             :href="route('dashboard')"
                             :active="route().current('dashboard')"
                         >
-                            Dashboard
+                            {{ __('Dashboard') }}
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="route('books.index')"
                             :active="route().current('books.index')"
                         >
-                            Bücher
+                            {{ __('Books') }}
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="route('books.create')"
                             :active="route().current('books.create')"
                         >
-                            Hinzufügen
+                            {{ __('Add') }}
                         </ResponsiveNavLink>
                     </div>
 
@@ -190,14 +190,14 @@ const showingNavigationDropdown = ref(false);
 
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink :href="route('profile.edit')">
-                                Profile
+                                {{ __('Profile') }}
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
                             >
-                                Log Out
+                                {{ __('Log Out') }}
                             </ResponsiveNavLink>
                         </div>
                     </div>
