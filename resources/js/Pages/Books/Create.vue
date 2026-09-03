@@ -12,7 +12,7 @@ const form = useForm({
     author: '',
     isbn: '',
     pages: '',
-    format: 'E-Book',
+    format: 'Hardcover',
     published_year: '',
     genre: '',
     status: 'Ungelesen',
@@ -127,18 +127,23 @@ const startScanner = async () => {
                 useBarCodeDetectorIfSupported: true
             },
             // Höhere Auflösung + kontinuierlicher Autofokus, wo vom Gerät unterstützt.
-            // Bei einer konkret gewählten Kamera (deviceId) KEIN facingMode mitschicken,
-            // da sich beide Vorgaben sonst widersprechen können.
+            // WICHTIG: html5-qrcode nutzt, wenn videoConstraints gesetzt ist, NUR diese
+            // für den getUserMedia-Aufruf und ignoriert dabei den ersten start()-Parameter
+            // (cameraSource) komplett. Die deviceId muss deshalb HIER rein, sonst wählt
+            // der Browser einfach seine eigene Standardkamera (z.B. die Frontkamera).
             videoConstraints: {
-                ...(selectedCameraId.value ? {} : { facingMode: "environment" }),
+                ...(selectedCameraId.value
+                    ? { deviceId: { exact: selectedCameraId.value } }
+                    : { facingMode: "environment" }),
                 width: { ideal: 1920 },
                 height: { ideal: 1080 },
                 advanced: [{ focusMode: "continuous" }]
             }
         };
 
-        // Wenn eine konkrete Kamera ausgewählt wurde (z.B. Ultra-Weitwinkel/Makro-Linse),
-        // diese exakt anfordern statt nur generisch "irgendeine Rückkamera".
+        // Wird als Fallback verwendet, falls html5-qrcode videoConstraints intern doch
+        // nicht wie erwartet priorisiert (Version/Browser-Unterschiede) – hält dieselbe
+        // Kamera-Vorgabe konsistent, statt einer widersprüchlichen zweiten Quelle.
         const cameraSource = selectedCameraId.value
             ? { deviceId: { exact: selectedCameraId.value } }
             : { facingMode: "environment" };
