@@ -9,17 +9,13 @@ use Inertia\Inertia;
 use App\Http\Controllers\BookController;
 
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
-
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
-});
+})->middleware('guest');
 
 Route::get('/dashboard', [BookController::class, 'dashboard'])
     ->middleware(['auth', 'verified'])->name('dashboard');
