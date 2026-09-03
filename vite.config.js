@@ -25,15 +25,16 @@ export default defineConfig({
                 name: 'Bookstats',
                 short_name: 'Bookstats',
                 description: 'Mein persönlicher Buch-Tracker',
-                theme_color: '#ffffff',
+                theme_color: '#feecd3',
+                background_color: '#feecd3',
                 icons: [
                     {
-                        src: 'pwa-192x192.png',
+                        src: 'android-chrome-192x192.png',
                         sizes: '192x192',
                         type: 'image/png'
                     },
                     {
-                        src: 'pwa-512x512.png',
+                        src: 'android-chrome-512x512.png',
                         sizes: '512x512',
                         type: 'image/png'
                     }
