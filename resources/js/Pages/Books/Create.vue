@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, onBeforeUnmount } from 'vue';
 import axios from 'axios';
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import InputError from '@/Components/InputError.vue';
 import { QrCodeIcon } from '@heroicons/vue/24/outline';
 
@@ -28,32 +28,101 @@ const searchResults = ref([]);
 const isScannerActive = ref(false);
 let html5QrCode = null;
 
+// Merkt sich den letzten Treffer, um Fehllesungen durch Mehrfachbestätigung
+// (derselbe Code muss zweimal hintereinander erkannt werden) herauszufiltern.
+let lastCandidate = null;
+let lastCandidateCount = 0;
+
+// Prüfziffer einer ISBN-13 (EAN-13) validieren.
+const isValidIsbn13 = (code) => {
+    if (code.length !== 13) return false;
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+        const digit = Number(code[i]);
+        sum += (i % 2 === 0) ? digit : digit * 3;
+    }
+    const checkDigit = (10 - (sum % 10)) % 10;
+    return checkDigit === Number(code[12]);
+};
+
+// Prüfziffer einer ISBN-10 validieren (X als Prüfziffer erlaubt).
+const isValidIsbn10 = (code) => {
+    if (code.length !== 10) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+        if (!/\d/.test(code[i])) return false;
+        sum += Number(code[i]) * (10 - i);
+    }
+    const last = code[9].toUpperCase();
+    const checkValue = last === 'X' ? 10 : Number(last);
+    if (Number.isNaN(checkValue)) return false;
+    sum += checkValue;
+    return sum % 11 === 0;
+};
+
+const isValidIsbn = (code) => isValidIsbn13(code) || isValidIsbn10(code);
+
 const startScanner = async () => {
     console.log("Scanner V5 starting...");
     isScannerActive.value = true;
-    html5QrCode = new Html5Qrcode("reader");
+    lastCandidate = null;
+    lastCandidateCount = 0;
+    html5QrCode = new Html5Qrcode("reader", {
+        // Nur die Formate zulassen, die auf Buchrückseiten tatsächlich vorkommen.
+        // Ohne diese Einschränkung versucht html5-qrcode auch QR/Code39/Codabar/etc.
+        // zu decodieren, was bei unscharfen Aufnahmen zu falschen Zahlenfolgen führt.
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+        ],
+        verbose: false,
+    });
     try {
         const config = {
-            fps: 20,
+            fps: 10, // niedriger als 20: jedes Frame wird sorgfältiger analysiert
             qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const width = Math.min(viewfinderWidth * 0.8, 300);
-                const height = 120;
+                // Breites, flaches Fenster passend zur Form eines EAN-13-Barcodes
+                const width = Math.min(viewfinderWidth * 0.9, 350);
+                const height = Math.min(viewfinderHeight * 0.4, 140);
                 return { width, height };
             },
             aspectRatio: 1.777778,
+            disableFlip: true,
             experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
+            },
+            // Höhere Auflösung + kontinuierlicher Autofokus, wo vom Gerät unterstützt.
+            videoConstraints: {
+                facingMode: "environment",
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                advanced: [{ focusMode: "continuous" }]
             }
         };
 
-        // Minimal setup to avoid "3 keys" error
         await html5QrCode.start(
             { facingMode: "environment" },
             config,
             (decodedText) => {
-                // Validate if it looks like an ISBN (10 or 13 digits)
                 const cleanCode = decodedText.replace(/[-\s]/g, "");
-                if (cleanCode.length >= 10 && /^\d+$/.test(cleanCode)) {
+
+                // Nur Kandidaten akzeptieren, die wie eine gültige ISBN aussehen.
+                if (!isValidIsbn(cleanCode)) {
+                    lastCandidate = null;
+                    lastCandidateCount = 0;
+                    return;
+                }
+
+                // Erst nach zweimaliger identischer Erkennung übernehmen,
+                // um einmalige Fehllesungen abzufangen.
+                if (cleanCode === lastCandidate) {
+                    lastCandidateCount++;
+                } else {
+                    lastCandidate = cleanCode;
+                    lastCandidateCount = 1;
+                }
+
+                if (lastCandidateCount >= 2) {
                     if (window.navigator.vibrate) {
                         window.navigator.vibrate(100);
                     }
@@ -63,9 +132,22 @@ const startScanner = async () => {
                 }
             },
             (errorMessage) => {
-                // Ignore errors
+                // Ignorieren: wird bei jedem Frame ohne Treffer aufgerufen
             }
         );
+
+        // Falls verfügbar, versuchen den Autofokus/Zoom explizit zu setzen
+        // (manche Browser wenden 'advanced' aus videoConstraints nicht zuverlässig an).
+        try {
+            const capabilities = html5QrCode.getRunningTrackCapabilities?.();
+            if (capabilities?.focusMode?.includes("continuous")) {
+                await html5QrCode.applyVideoConstraints({
+                    advanced: [{ focusMode: "continuous" }]
+                });
+            }
+        } catch (focusErr) {
+            console.warn("Autofokus konnte nicht gesetzt werden", focusErr);
+        }
     } catch (err) {
         console.error("Scanner failed", err);
         alert("Fehler: " + err);
