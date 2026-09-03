@@ -1,21 +1,18 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\BookController;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-})->middleware('guest');
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+});
 
 Route::get('/dashboard', [BookController::class, 'dashboard'])
     ->middleware(['auth', 'verified'])->name('dashboard');
