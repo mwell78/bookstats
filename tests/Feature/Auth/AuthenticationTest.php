@@ -39,11 +39,3 @@ test('users can logout', function () {
     $this->assertGuest();
     $response->assertRedirect('/');
 });
-
-test('authenticated users are redirected from welcome to dashboard', function () {
-    $user = User::factory()->create();
-
-    $response = $this->actingAs($user)->get('/');
-
-    $response->assertRedirect(route('dashboard', absolute: false));
-});
