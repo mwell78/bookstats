@@ -35,27 +35,34 @@ const startScanner = async () => {
         const config = {
             fps: 20,
             qrbox: (viewfinderWidth, viewfinderHeight) => {
-                // Return a wide rectangle for barcodes
-                const width = viewfinderWidth * 0.8;
-                const height = 150;
+                const width = Math.min(viewfinderWidth * 0.8, 300);
+                const height = 120;
                 return { width, height };
             },
+            aspectRatio: 1.777778,
             experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
-            },
-            aspectRatio: 1.777778 // 16:9
+            }
         };
 
         await html5QrCode.start(
-            { facingMode: "environment" },
+            { 
+                facingMode: "environment",
+                width: { min: 640, ideal: 1280, max: 1920 },
+                height: { min: 480, ideal: 720, max: 1080 }
+            },
             config,
             (decodedText) => {
-                if (window.navigator.vibrate) {
-                    window.navigator.vibrate(100);
+                // Validate if it looks like an ISBN (10 or 13 digits)
+                const cleanCode = decodedText.replace(/[-\s]/g, "");
+                if (cleanCode.length >= 10 && /^\d+$/.test(cleanCode)) {
+                    if (window.navigator.vibrate) {
+                        window.navigator.vibrate(100);
+                    }
+                    form.isbn = cleanCode;
+                    stopScanner();
+                    searchByIsbn();
                 }
-                form.isbn = decodedText;
-                stopScanner();
-                searchByIsbn();
             },
             (errorMessage) => {
                 // Ignore errors
