@@ -1,11 +1,40 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { PencilIcon, TrashIcon, ChevronUpDownIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
+import { PencilIcon, TrashIcon, ChevronUpDownIcon, ChevronUpIcon, ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     books: Object,
     filters: Object,
+});
+
+const search = ref(props.filters.search || '');
+const allBooks = ref([...props.books.data]);
+const isLoading = ref(false);
+const loadMoreIntersect = ref(null);
+
+watch(() => props.books.data, (newData) => {
+    if (props.books.current_page === 1) {
+        allBooks.value = [...newData];
+    } else {
+        // Filter out duplicates just in case
+        const existingIds = new Set(allBooks.value.map(b => b.id));
+        const newItems = newData.filter(b => !existingIds.has(b.id));
+        allBooks.value.push(...newItems);
+    }
+    isLoading.value = false;
+});
+
+let searchTimeout = null;
+watch(search, (value) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        router.get(route('books.index'), 
+            { ...props.filters, search: value, page: 1 }, 
+            { preserveState: true, replace: true }
+        );
+    }, 300);
 });
 
 const sortBy = (field) => {
@@ -13,8 +42,39 @@ const sortBy = (field) => {
     if (props.filters.sort_by === field && props.filters.sort_order === 'asc') {
         order = 'desc';
     }
-    router.get(route('books.index'), { sort_by: field, sort_order: order }, { preserveState: true });
+    router.get(route('books.index'), { ...props.filters, sort_by: field, sort_order: order, page: 1 }, { preserveState: true });
 };
+
+const loadMore = () => {
+    if (isLoading.value || !props.books.next_page_url) return;
+    
+    isLoading.value = true;
+    router.get(props.books.next_page_url, {}, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['books'],
+        onFinish: () => {
+            isLoading.value = false;
+        }
+    });
+};
+
+let observer = null;
+onMounted(() => {
+    observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            loadMore();
+        }
+    }, { rootMargin: '200px' });
+
+    if (loadMoreIntersect.value) {
+        observer.observe(loadMoreIntersect.value);
+    }
+});
+
+onUnmounted(() => {
+    if (observer) observer.disconnect();
+});
 
 const getSortIcon = (field) => {
     if (props.filters.sort_by !== field) return '↕';
@@ -57,12 +117,22 @@ const getStatusBadgeClass = (status) => {
 
         <div class="py-4">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div class= "overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="mb-4 px-1 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="relative w-full max-w-xs">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <MagnifyingGlassIcon class="h-5 h-5 opacity-50" />
+                        </div>
+                        <input v-model="search" type="text" placeholder="Bücher suchen..."
+                            class="input input-bordered w-full pl-10" />
+                    </div>
+                </div>
+
+                <div class="overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="px-1">
                         <div class="overflow-x-auto">
                             <table class="table w-full text-base-content">
                                 <thead>
-                                    <tr >
+                                    <tr>
                                         <th>Cover</th>
                                         <th @click="sortBy('title')"
                                             class="p-2 min-w-55 cursor-pointer hover:text-primary transition-colors group">
@@ -88,8 +158,7 @@ const getStatusBadgeClass = (status) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="book in books.data" :key="book.id"
-                                        class="hover:bg-base-100">
+                                    <tr v-for="book in allBooks" :key="book.id" class="hover:bg-base-100">
                                         <td class="p-2">
                                             <div class="w-14  shadow-sm">
                                                 <img v-if="book.cover_image" :src="book.cover_image" :alt="book.title"
@@ -118,7 +187,7 @@ const getStatusBadgeClass = (status) => {
                                                 <Link :href="route('books.edit', book.id)"
                                                     class="btn btn-xs btn-square btn-outline btn-info"
                                                     title="Bearbeiten">
-                                                    <PencilIcon class="w-4 h-4" />
+                                                <PencilIcon class="w-4 h-4" />
                                                 </Link>
                                                 <button @click="deleteBook(book.id)"
                                                     class="btn btn-xs btn-square btn-outline btn-error" title="Löschen">
@@ -139,14 +208,9 @@ const getStatusBadgeClass = (status) => {
                             </table>
                         </div>
 
-                        <!-- Simple Pagination -->
-                        <div v-if="books.links.length > 3" class="mt-6 flex justify-center">
-                            <div class="join">
-                                <Link v-for="(link, k) in books.links" :key="k" :href="link.url || '#'"
-                                    class="join-item btn btn-sm"
-                                    :class="{ 'btn-active': link.active, 'btn-disabled': !link.url }"
-                                    v-html="link.label" />
-                            </div>
+                        <!-- Infinite Scroll Trigger -->
+                        <div ref="loadMoreIntersect" class="h-20 flex items-center justify-center w-full">
+                            <span v-if="isLoading" class="loading loading-spinner loading-md opacity-50"></span>
                         </div>
                     </div>
                 </div>

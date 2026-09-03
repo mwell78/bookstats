@@ -49,6 +49,7 @@ class BookController extends Controller
     {
         $sortBy = $request->query('sort_by', 'finished_at');
         $sortOrder = $request->query('sort_order', 'desc');
+        $search = $request->query('search');
 
         // Allow sorting by these fields
         $allowedSortFields = ['title', 'author', 'status', 'finished_at'];
@@ -60,8 +61,16 @@ class BookController extends Controller
             $sortOrder = 'desc';
         }
 
-        $books = auth()->user()->books()
-            ->orderBy($sortBy, $sortOrder)
+        $query = auth()->user()->books();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%");
+            });
+        }
+
+        $books = $query->orderBy($sortBy, $sortOrder)
             ->paginate(20)
             ->withQueryString();
 
@@ -70,6 +79,7 @@ class BookController extends Controller
             'filters' => [
                 'sort_by' => $sortBy,
                 'sort_order' => $sortOrder,
+                'search' => $search,
             ]
         ]);
     }
