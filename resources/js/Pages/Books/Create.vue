@@ -42,15 +42,16 @@ const startScanner = async () => {
             aspectRatio: 1.777778,
             experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
+            },
+            videoConstraints: {
+                width: { min: 640, ideal: 1280, max: 1920 },
+                height: { min: 480, ideal: 720, max: 1080 },
+                facingMode: "environment"
             }
         };
 
         await html5QrCode.start(
-            { 
-                facingMode: "environment",
-                width: { min: 640, ideal: 1280, max: 1920 },
-                height: { min: 480, ideal: 720, max: 1080 }
-            },
+            { facingMode: "environment" },
             config,
             (decodedText) => {
                 // Validate if it looks like an ISBN (10 or 13 digits)
