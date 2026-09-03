@@ -33,12 +33,27 @@ const startScanner = async () => {
     html5QrCode = new Html5Qrcode("reader");
     try {
         await html5QrCode.start(
-            { facingMode: "environment" },
+            { 
+                facingMode: "environment",
+                focusMode: "continuous",
+            },
             {
-                fps: 10,
-                qrbox: { width: 250, height: 150 }
+                fps: 20,
+                qrbox: { width: 280, height: 200 },
+                formatsToSupport: [ 
+                    0, // Html5QrcodeSupportedFormats.EAN_13
+                    1, // Html5QrcodeSupportedFormats.EAN_8
+                    6, // Html5QrcodeSupportedFormats.QR_CODE
+                    11 // Html5QrcodeSupportedFormats.ISBN
+                ],
+                aspectRatio: 1.777778, // 16:9
             },
             (decodedText) => {
+                // Haptic feedback if supported
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate(100);
+                }
+                
                 form.isbn = decodedText;
                 stopScanner();
                 searchByIsbn();
