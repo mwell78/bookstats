@@ -1,13 +1,22 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import { onMounted } from 'vue';
 
-defineProps({
+const props = defineProps({
     canLogin: {
         type: Boolean,
     },
     canRegister: {
         type: Boolean,
     },
+});
+
+const page = usePage();
+
+onMounted(() => {
+    if (page.props.auth.user) {
+        router.visit(route('dashboard'));
+    }
 });
 </script>
 
