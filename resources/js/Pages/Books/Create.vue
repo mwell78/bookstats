@@ -33,27 +33,15 @@ const startScanner = async () => {
     html5QrCode = new Html5Qrcode("reader");
     try {
         await html5QrCode.start(
-            { 
-                facingMode: "environment",
-                focusMode: "continuous",
-            },
+            { facingMode: "environment" },
             {
                 fps: 20,
                 qrbox: { width: 280, height: 200 },
-                formatsToSupport: [ 
-                    0, // Html5QrcodeSupportedFormats.EAN_13
-                    1, // Html5QrcodeSupportedFormats.EAN_8
-                    6, // Html5QrcodeSupportedFormats.QR_CODE
-                    11 // Html5QrcodeSupportedFormats.ISBN
-                ],
-                aspectRatio: 1.777778, // 16:9
             },
             (decodedText) => {
-                // Haptic feedback if supported
                 if (window.navigator.vibrate) {
                     window.navigator.vibrate(100);
                 }
-                
                 form.isbn = decodedText;
                 stopScanner();
                 searchByIsbn();
@@ -64,6 +52,7 @@ const startScanner = async () => {
         );
     } catch (err) {
         console.error("Scanner failed", err);
+        alert("Kamera konnte nicht gestartet werden: " + err);
         isScannerActive.value = false;
     }
 };
