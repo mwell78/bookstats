@@ -6,6 +6,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
+import { UserIcon, Square3Stack3DIcon, PlusIcon } from '@heroicons/vue/24/outline';
 
 const showingNavigationDropdown = ref(false);
 </script>
@@ -101,44 +102,34 @@ const showingNavigationDropdown = ref(false);
                             </div>
                         </div>
 
-                        <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
+                        <!-- Hamburger / Mobile Menu -->
+                        <div class="-me-2 flex items-center sm:hidden gap-1">
+                            <Link
+                                :href="route('books.index')"
+                                class="inline-flex items-center justify-center rounded-md p-2 text-base-content/60 hover:bg-base-200 hover:text-base-content transition duration-150 ease-in-out"
+                                :class="{ 'text-primary': route().current('books.index') }"
+                                title="Bücher"
+                            >
+                                <Square3Stack3DIcon class="h-6 w-6" />
+                            </Link>
+                            <Link
+                                :href="route('books.create')"
+                                class="inline-flex items-center justify-center rounded-md p-2 text-base-content/60 hover:bg-base-200 hover:text-base-content transition duration-150 ease-in-out"
+                                :class="{ 'text-primary': route().current('books.create') }"
+                                title="Hinzufügen"
+                            >
+                                <PlusIcon class="h-6 w-6" />
+                            </Link>
+
                             <button
                                 @click="
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
                                 "
                                 class="inline-flex items-center justify-center rounded-md p-2 text-base-content/60 hover:bg-base-200 hover:text-base-content transition duration-150 ease-in-out"
+                                :class="{ 'bg-base-200 text-base-content': showingNavigationDropdown }"
                             >
-                                <svg
-                                    class="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        :class="{
-                                            hidden: showingNavigationDropdown,
-                                            'inline-flex':
-                                                !showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        :class="{
-                                            hidden: !showingNavigationDropdown,
-                                            'inline-flex':
-                                                showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
+                                <UserIcon class="h-6 w-6" />
                             </button>
                         </div>
                     </div>
@@ -152,32 +143,11 @@ const showingNavigationDropdown = ref(false);
                     }"
                     class="sm:hidden"
                 >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            {{ __('Dashboard') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('books.index')"
-                            :active="route().current('books.index')"
-                        >
-                            {{ __('Books') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('books.create')"
-                            :active="route().current('books.create')"
-                        >
-                            {{ __('Add') }}
-                        </ResponsiveNavLink>
-                    </div>
-
                     <!-- Responsive Settings Options -->
                     <div
                         class="border-t border-base-content/10"
                     >
-                        <div class="px-4">
+                        <div class="px-4 py-3">
                             <div
                                 class="text-base font-medium text-base-content"
                             >
@@ -188,8 +158,8 @@ const showingNavigationDropdown = ref(false);
                             </div>
                         </div>
 
-                        <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
+                        <div class="space-y-1 pb-3">
+                            <ResponsiveNavLink :href="route('profile.edit')" :active="route().current('profile.edit')">
                                 {{ __('Profile') }}
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
