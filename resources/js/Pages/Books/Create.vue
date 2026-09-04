@@ -13,7 +13,7 @@ const form = useForm({
     author: '',
     isbn: '',
     pages: '',
-    format: 'Hardcover',
+    format: 'E-Book',
     published_year: '',
     genre: '',
     status: 'Ungelesen',

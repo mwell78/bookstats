@@ -13,7 +13,7 @@ const form = useForm({
     author: props.book.author || '',
     isbn: props.book.isbn || '',
     pages: props.book.pages || '',
-    format: props.book.format || 'Hardcover',
+    format: props.book.format || 'E-Book',
     published_year: props.book.published_year || '',
     genre: props.book.genre || '',
     status: props.book.status || 'Ungelesen',
