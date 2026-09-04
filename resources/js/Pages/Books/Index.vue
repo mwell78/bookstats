@@ -179,7 +179,11 @@ const getStatusBadgeClass = (status) => {
                                                     {{ book.author }}</span>
                                             </div>
                                             <div class="py-2">
-                                                {{ book.title }}</div>
+                                                <div class="font-medium">{{ book.title }}</div>
+                                                <div v-if="book.subtitle" class="text-xs opacity-60 leading-tight">
+                                                    {{ book.subtitle }}
+                                                </div>
+                                            </div>
 
                                         </td>
                                         <td class="p-2">

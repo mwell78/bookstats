@@ -9,6 +9,7 @@ import { QrCodeIcon } from '@heroicons/vue/24/outline';
 
 const form = useForm({
     title: '',
+    subtitle: '',
     author: '',
     isbn: '',
     pages: '',
@@ -342,6 +343,12 @@ const submit = () => {
                             <label class="label">Titel</label>
                             <input v-model="form.title" type="text" class="input input-bordered w-full" required />
                             <InputError :message="form.errors.title" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <label class="label">Untertitel</label>
+                            <input v-model="form.subtitle" type="text" class="input input-bordered w-full" />
+                            <InputError :message="form.errors.subtitle" class="mt-2" />
                         </div>
 
                         <div>

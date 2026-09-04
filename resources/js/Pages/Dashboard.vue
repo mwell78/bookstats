@@ -52,6 +52,9 @@ defineProps({
                                 <h3 class="text-3xl md:text-5xl font-light leading-tight font-serif">
                                     {{ book.title }}
                                 </h3>
+                                <div v-if="book.subtitle" class="mt-2 text-lg md:text-xl font-light text-base-content/60 italic">
+                                    {{ book.subtitle }}
+                                </div>
                             </div>
 
                             <!-- Details Table -->
@@ -59,7 +62,10 @@ defineProps({
                                 <div class="bg-base-100/30 backdrop-blur-md rounded-lg divide-y divide-base-content/10 text-sm md:text-base">
                                     <div class="flex justify-between py-3 px-4">
                                         <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">{{ __('Title') }}</span>
-                                        <span class="text-right ml-4">{{ book.title }}</span>
+                                        <span class="text-right ml-4 flex flex-col items-end">
+                                            <span>{{ book.title }}</span>
+                                            <span v-if="book.subtitle" class="text-xs opacity-60">{{ book.subtitle }}</span>
+                                        </span>
                                     </div>
                                     <div class="flex justify-between py-3 px-4">
                                         <span class="text-base-content/50 uppercase tracking-wider text-xs font-bold">{{ __('Author') }}</span>

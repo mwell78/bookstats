@@ -9,6 +9,7 @@ const props = defineProps({
 
 const form = useForm({
     title: props.book.title,
+    subtitle: props.book.subtitle || '',
     author: props.book.author || '',
     isbn: props.book.isbn || '',
     pages: props.book.pages || '',
@@ -58,6 +59,12 @@ const submit = () => {
                             <label class="label">Titel</label>
                             <input v-model="form.title" type="text" class="input input-bordered w-full" required />
                             <InputError :message="form.errors.title" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <label class="label">Untertitel</label>
+                            <input v-model="form.subtitle" type="text" class="input input-bordered w-full" />
+                            <InputError :message="form.errors.subtitle" class="mt-2" />
                         </div>
 
                         <div>
