@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ class BookController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
-        
+
         $stats = [
             'totalBooks' => $user->books()->count(),
             'totalPages' => $user->books()->sum('pages'),
@@ -29,7 +30,7 @@ class BookController extends Controller
                 ->whereNotNull('finished_at')
                 ->whereNotNull('started_at')
                 ->get()
-                ->map(fn($book) => Carbon::parse($book->started_at)->diffInDays(Carbon::parse($book->finished_at)))
+                ->map(fn ($book) => Carbon::parse($book->started_at)->diffInDays(Carbon::parse($book->finished_at)))
                 ->avg() ?? 0, 1),
             'currentBooks' => $user->books()->where('status', 'Am lesen')->get(),
             'recentBooks' => $user->books()->latest()->take(3)->get(),
@@ -41,7 +42,7 @@ class BookController extends Controller
         ];
 
         return Inertia::render('Dashboard', [
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 
@@ -53,11 +54,11 @@ class BookController extends Controller
 
         // Allow sorting by these fields
         $allowedSortFields = ['title', 'author', 'status', 'finished_at'];
-        if (!in_array($sortBy, $allowedSortFields)) {
+        if (! in_array($sortBy, $allowedSortFields)) {
             $sortBy = 'finished_at';
         }
 
-        if (!in_array($sortOrder, ['asc', 'desc'])) {
+        if (! in_array($sortOrder, ['asc', 'desc'])) {
             $sortOrder = 'desc';
         }
 
@@ -80,7 +81,7 @@ class BookController extends Controller
                 'sort_by' => $sortBy,
                 'sort_order' => $sortOrder,
                 'search' => $search,
-            ]
+            ],
         ]);
     }
 
@@ -106,6 +107,9 @@ class BookController extends Controller
             'cover_file' => 'nullable|image|max:2048',
             'published_year' => 'nullable|max:255',
             'genre' => 'nullable|string',
+            'quotes' => 'nullable|array',
+            'quotes.*.content' => 'required|string',
+            'quotes.*.page' => 'nullable|integer',
         ]);
 
         if ($request->hasFile('cover_file')) {
@@ -115,7 +119,17 @@ class BookController extends Controller
             $validated['cover_image'] = $this->downloadCover($request->cover_image);
         }
 
-        auth()->user()->books()->create($validated);
+        $book = auth()->user()->books()->create(Arr::except($validated, ['quotes']));
+
+        if (! empty($validated['quotes'])) {
+            foreach ($validated['quotes'] as $quoteData) {
+                $book->quotes()->create([
+                    'user_id' => auth()->id(),
+                    'content' => $quoteData['content'],
+                    'page' => $quoteData['page'] ?? null,
+                ]);
+            }
+        }
 
         return redirect()->route('books.index')->with('success', 'Buch erfolgreich hinzugefügt.');
     }
@@ -127,7 +141,7 @@ class BookController extends Controller
         }
 
         return Inertia::render('Books/Edit', [
-            'book' => $book
+            'book' => $book->load('quotes'),
         ]);
     }
 
@@ -152,6 +166,10 @@ class BookController extends Controller
             'cover_file' => 'nullable|image|max:2048',
             'published_year' => 'nullable|max:255',
             'genre' => 'nullable|string',
+            'quotes' => 'nullable|array',
+            'quotes.*.id' => 'nullable|integer',
+            'quotes.*.content' => 'required|string',
+            'quotes.*.page' => 'nullable|integer',
         ]);
 
         if ($request->hasFile('cover_file')) {
@@ -161,7 +179,34 @@ class BookController extends Controller
             $validated['cover_image'] = $this->downloadCover($request->cover_image);
         }
 
-        $book->update($validated);
+        $book->update(Arr::except($validated, ['quotes']));
+
+        // Handle quotes update
+        $quoteIds = [];
+        if (! empty($validated['quotes'])) {
+            foreach ($validated['quotes'] as $quoteData) {
+                if (isset($quoteData['id'])) {
+                    $quote = $book->quotes()->find($quoteData['id']);
+                    if ($quote) {
+                        $quote->update([
+                            'content' => $quoteData['content'],
+                            'page' => $quoteData['page'] ?? null,
+                        ]);
+                        $quoteIds[] = $quote->id;
+                    }
+                } else {
+                    $newQuote = $book->quotes()->create([
+                        'user_id' => auth()->id(),
+                        'content' => $quoteData['content'],
+                        'page' => $quoteData['page'] ?? null,
+                    ]);
+                    $quoteIds[] = $newQuote->id;
+                }
+            }
+        }
+
+        // Delete quotes that were removed in the UI
+        $book->quotes()->whereNotIn('id', $quoteIds)->delete();
 
         return redirect()->route('books.index')->with('success', 'Buch erfolgreich aktualisiert.');
     }
@@ -173,7 +218,7 @@ class BookController extends Controller
         }
 
         // Delete local cover if exists
-        if ($book->cover_image && !Str::startsWith($book->cover_image, 'http')) {
+        if ($book->cover_image && ! Str::startsWith($book->cover_image, 'http')) {
             Storage::disk('public')->delete(str_replace('/storage/', '', $book->cover_image));
         }
 
@@ -184,7 +229,7 @@ class BookController extends Controller
 
     private function downloadCover($url)
     {
-        if (!$url || !Str::startsWith($url, 'http')) {
+        if (! $url || ! Str::startsWith($url, 'http')) {
             return $url;
         }
 
@@ -192,14 +237,14 @@ class BookController extends Controller
             $response = Http::get($url);
             if ($response->successful()) {
                 $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'jpg';
-                $filename = 'covers/' . Str::random(40) . '.' . $extension;
-                
+                $filename = 'covers/'.Str::random(40).'.'.$extension;
+
                 Storage::disk('public')->put($filename, $response->body());
-                
+
                 return Storage::url($filename);
             }
         } catch (\Exception $e) {
-            \Log::error('Cover download failed: ' . $e->getMessage());
+            \Log::error('Cover download failed: '.$e->getMessage());
         }
 
         return $url;
@@ -208,21 +253,23 @@ class BookController extends Controller
     public function search(Request $request)
     {
         $title = $request->query('title');
-        $response = Http::get("https://openlibrary.org/search.json", [
+        $response = Http::get('https://openlibrary.org/search.json', [
             'title' => $title,
-            'limit' => 5
+            'limit' => 5,
         ]);
+
         return $response->json();
     }
 
     public function searchByIsbn(Request $request)
     {
         $isbn = $request->query('isbn');
-        $response = Http::get("https://openlibrary.org/api/books", [
+        $response = Http::get('https://openlibrary.org/api/books', [
             'bibkeys' => "ISBN:$isbn",
             'format' => 'json',
-            'jscmd' => 'data'
+            'jscmd' => 'data',
         ]);
+
         return $response->json();
     }
 }

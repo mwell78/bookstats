@@ -6,7 +6,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
-import { UserIcon, Square3Stack3DIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { UserIcon, Square3Stack3DIcon, PlusIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
 
 const showingNavigationDropdown = ref(false);
 </script>
@@ -52,6 +52,12 @@ const showingNavigationDropdown = ref(false);
                                     :active="route().current('books.create')"
                                 >
                                     {{ __('Add') }}
+                                </NavLink>
+                                <NavLink
+                                    :href="route('quotes.index')"
+                                    :active="route().current('quotes.index')"
+                                >
+                                    Zitate
                                 </NavLink>
                             </div>
                         </div>
@@ -119,6 +125,14 @@ const showingNavigationDropdown = ref(false);
                                 title="Hinzufügen"
                             >
                                 <PlusIcon class="h-6 w-6" />
+                            </Link>
+                            <Link
+                                :href="route('quotes.index')"
+                                class="inline-flex items-center justify-center rounded-md p-2 text-base-content/60 hover:bg-base-200 hover:text-base-content transition duration-150 ease-in-out"
+                                :class="{ 'text-primary': route().current('quotes.index') }"
+                                title="Zitate"
+                            >
+                                <ChatBubbleBottomCenterTextIcon class="h-6 w-6" />
                             </Link>
 
                             <button

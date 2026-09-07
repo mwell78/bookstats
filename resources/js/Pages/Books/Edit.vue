@@ -20,9 +20,18 @@ const form = useForm({
     started_at: props.book.started_at || '',
     finished_at: props.book.finished_at || '',
     notes: props.book.notes || '',
+    quotes: props.book.quotes?.map(q => ({ id: q.id, content: q.content, page: q.page })) || [],
     cover_image: props.book.cover_image || '',
     cover_file: null,
 });
+
+const addQuote = () => {
+    form.quotes.push({ content: '', page: '' });
+};
+
+const removeQuote = (index) => {
+    form.quotes.splice(index, 1);
+};
 
 const submit = () => {
     form.transform((data) => ({
@@ -122,6 +131,31 @@ const submit = () => {
                                 <InputError :message="form.errors.finished_at" class="mt-2" />
                             </div>
                         </div>
+
+                        <div class="divider">Zitate</div>
+
+                        <div v-for="(quote, index) in form.quotes" :key="index" class="space-y-2 mb-4 p-4 bg-base-200 rounded-lg relative group">
+                            <button @click.prevent="removeQuote(index)" class="btn btn-circle btn-xs btn-ghost absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="col-span-3">
+                                    <label class="label py-0 text-xs">Zitat</label>
+                                    <textarea v-model="quote.content" placeholder="Zitat..." class="textarea textarea-bordered w-full" rows="2"></textarea>
+                                </div>
+                                <div>
+                                    <label class="label py-0 text-xs">Seite</label>
+                                    <input v-model="quote.page" type="number" placeholder="Seite" class="input input-bordered w-full" />
+                                </div>
+                            </div>
+                            <InputError :message="form.errors[`quotes.${index}.content`]" class="mt-1" />
+                            <InputError :message="form.errors[`quotes.${index}.page`]" class="mt-1" />
+                        </div>
+                        
+                        <button @click.prevent="addQuote" class="btn btn-outline btn-sm w-full mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            Zitat hinzufügen
+                        </button>
 
                         <div>
                             <label class="label">Notizen</label>

@@ -6,7 +6,6 @@ use App\Models\Book;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Log;
 
 class BookImportSeeder extends Seeder
 {
@@ -14,7 +13,7 @@ class BookImportSeeder extends Seeder
     {
         $csvFile = base_path('Bookstats.csv');
         $handle = fopen($csvFile, 'r');
-        
+
         // Skip BOM if exists
         $bom = fread($handle, 3);
         if ($bom !== "\xEF\xBB\xBF") {
@@ -23,16 +22,19 @@ class BookImportSeeder extends Seeder
 
         // Get headers
         $header = fgetcsv($handle, 0, ';');
-        
+
         $user = User::where('email', 'info@wmemtipp.de')->first();
-        if (!$user) {
+        if (! $user) {
             $this->command->error('User info@wmemtipp.de not found! Please run UserSeeder first.');
+
             return;
         }
 
         $count = 0;
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
-            if (count($row) < 18) continue;
+            if (count($row) < 18) {
+                continue;
+            }
 
             $data = array_combine($header, $row);
 
@@ -41,7 +43,7 @@ class BookImportSeeder extends Seeder
                 'title' => $data['Titel'] ?? 'Unbekannt',
                 'author' => $data['Autor(en)'] ?? null,
                 'isbn' => $data['ISBN'] ?? null,
-                'pages' => is_numeric($data['Seitenanzahl']) ? (int)$data['Seitenanzahl'] : null,
+                'pages' => is_numeric($data['Seitenanzahl']) ? (int) $data['Seitenanzahl'] : null,
                 'format' => $data['Buchart'] ?? null,
                 'status' => $data['Lesestatus'] ?? 'Ungelesen',
                 'started_at' => $this->parseDate($data['Lesebeginn'] ?? null),
@@ -59,8 +61,10 @@ class BookImportSeeder extends Seeder
 
     private function parseDate($dateString)
     {
-        if (!$dateString || $dateString === 'null' || $dateString === '') return null;
-        
+        if (! $dateString || $dateString === 'null' || $dateString === '') {
+            return null;
+        }
+
         try {
             // German format DD.MM.YYYY
             return Carbon::createFromFormat('d.m.Y', $dateString)->format('Y-m-d');

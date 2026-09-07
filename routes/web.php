@@ -1,11 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuoteController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -31,6 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
     Route::get('/books/search', [BookController::class, 'search'])->name('books.search');
     Route::get('/books/search-isbn', [BookController::class, 'searchByIsbn'])->name('books.searchByIsbn');
+
+    Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

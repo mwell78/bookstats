@@ -27,4 +27,9 @@ class Book extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function quotes()
+    {
+        return $this->hasMany(Quote::class);
+    }
 }
