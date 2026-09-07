@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
+import { ChatBubbleBottomCenterIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     quotes: Object,
@@ -121,7 +122,7 @@ onMounted(() => {
                 </div>
 
                 <div v-else-if="!loading" class="text-center py-12">
-                    <div class="text-5xl mb-4">📖</div>
+                    <ChatBubbleBottomCenterIcon class="h-16 w-16 mx-auto mb-4 text-base-content/20" />
                     <h3 class="text-xl font-bold">Keine Zitate gefunden</h3>
                     <p class="text-base-content/60 mt-2">Füge Zitate hinzu, indem du ein Buch bearbeitest.</p>
                 </div>
