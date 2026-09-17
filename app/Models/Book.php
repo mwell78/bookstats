@@ -21,6 +21,7 @@ class Book extends Model
         'notes',
         'published_year',
         'genre',
+        'rating',
     ];
 
     public function user()

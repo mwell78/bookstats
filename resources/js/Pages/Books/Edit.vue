@@ -16,6 +16,7 @@ const form = useForm({
     format: props.book.format || 'E-Book',
     published_year: props.book.published_year || '',
     genre: props.book.genre || '',
+    rating: props.book.rating || 0,
     status: props.book.status || 'Ungelesen',
     started_at: props.book.started_at || '',
     finished_at: props.book.finished_at || '',
@@ -99,6 +100,15 @@ const submit = () => {
                                 </select>
                                 <InputError :message="form.errors.status" class="mt-2" />
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="label">Bewertung</label>
+                            <div class="rating rating-lg">
+                                <input type="radio" name="rating" class="rating-hidden" v-model="form.rating" :value="0" />
+                                <input v-for="n in 5" :key="n" type="radio" name="rating" class="mask mask-star-2 bg-orange-400" v-model="form.rating" :value="n" />
+                            </div>
+                            <InputError :message="form.errors.rating" class="mt-2" />
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">

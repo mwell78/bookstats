@@ -20,7 +20,7 @@ The project uses `composer` scripts to manage the development environment:
 ## Coding Style & Naming Conventions
 - **PHP**: Follows Laravel standards, enforced by **Laravel Pint**. Use `snake_case` for methods/variables and `PascalCase` for classes.
 - **Vue**: Use **Vue 3 Composition API** with `<script setup>`.
-- **CSS**: Use Tailwind utility classes; avoid custom CSS where possible.
+- **CSS**: Use Tailwind utility classes and DaisUI as frontend framwork; avoid custom CSS where possible.
 
 ## Testing Guidelines
 - **Framework**: Uses **Pest** for testing.
