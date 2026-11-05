@@ -255,9 +255,38 @@ class BookController extends Controller
     public function search(Request $request)
     {
         $title = $request->query('title');
+        $source = $request->query('source', 'openlibrary');
+
+        if ($source === 'google') {
+            $apiKey = config('services.google_books.key');
+            if (! $apiKey) {
+                return response()->json(['message' => 'Bitte hinterlege GOOGLE_BOOKS_API_KEY in der .env-Datei.'], 503);
+            }
+
+            $response = Http::timeout(10)->get('https://www.googleapis.com/books/v1/volumes', [
+                'q' => $title,
+                'langRestrict' => 'de',
+                'maxResults' => 10,
+                'printType' => 'books',
+                'key' => $apiKey,
+            ]);
+
+            if (! $response->successful()) {
+                return response()->json(['message' => 'Die Google-Books-Suche ist derzeit nicht verfügbar.'], 502);
+            }
+
+            return response()->json([
+                'docs' => collect($response->json('items', []))
+                    ->map(fn ($item) => $this->normalizeGoogleBook($item))
+                    ->filter()
+                    ->values(),
+            ]);
+        }
+
         $response = Http::get('https://openlibrary.org/search.json', [
-            'title' => $title,
-            'limit' => 5,
+            'q' => $title,
+            'lang' => 'de',
+            'limit' => 10,
         ]);
 
         return $response->json();
@@ -266,6 +295,32 @@ class BookController extends Controller
     public function searchByIsbn(Request $request)
     {
         $isbn = $request->query('isbn');
+
+        if ($request->query('source', 'openlibrary') === 'google') {
+            $apiKey = config('services.google_books.key');
+            if (! $apiKey) {
+                return response()->json(['message' => 'Bitte hinterlege GOOGLE_BOOKS_API_KEY in der .env-Datei.'], 503);
+            }
+
+            $response = Http::timeout(10)->get('https://www.googleapis.com/books/v1/volumes', [
+                'q' => 'isbn:'.$isbn,
+                'maxResults' => 10,
+                'printType' => 'books',
+                'key' => $apiKey,
+            ]);
+
+            if (! $response->successful()) {
+                return response()->json(['message' => 'Die Google-Books-Suche ist derzeit nicht verfügbar.'], 502);
+            }
+
+            return response()->json(
+                collect($response->json('items', []))
+                    ->map(fn ($item) => $this->normalizeGoogleBook($item))
+                    ->filter()
+                    ->first()
+            );
+        }
+
         $response = Http::get('https://openlibrary.org/api/books', [
             'bibkeys' => "ISBN:$isbn",
             'format' => 'json',
@@ -273,5 +328,29 @@ class BookController extends Controller
         ]);
 
         return $response->json();
+    }
+
+    private function normalizeGoogleBook(array $item): ?array
+    {
+        $volume = $item['volumeInfo'] ?? null;
+        if (! $volume || empty($volume['title'])) {
+            return null;
+        }
+
+        $identifiers = collect($volume['industryIdentifiers'] ?? [])
+            ->pluck('identifier')
+            ->values()
+            ->all();
+        $cover = $volume['imageLinks']['thumbnail'] ?? null;
+
+        return [
+            'key' => $item['id'] ?? $volume['title'],
+            'title' => $volume['title'],
+            'author_name' => $volume['authors'] ?? [],
+            'isbn' => $identifiers,
+            'number_of_pages_median' => $volume['pageCount'] ?? null,
+            'first_publish_year' => isset($volume['publishedDate']) ? substr($volume['publishedDate'], 0, 4) : null,
+            'cover_url' => $cover ? str_replace('http://', 'https://', $cover) : null,
+        ];
     }
 }

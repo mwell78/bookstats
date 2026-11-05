@@ -36,6 +36,8 @@ const removeQuote = (index) => {
 
 const searching = ref(false);
 const searchResults = ref([]);
+const searchProvider = ref('openlibrary');
+const searchError = ref('');
 const isScannerActive = ref(false);
 let html5QrCode = null;
 
@@ -231,19 +233,33 @@ onBeforeUnmount(() => {
 const searchByIsbn = async () => {
     if (!form.isbn) return;
     searching.value = true;
+    searchError.value = '';
     try {
         const response = await axios.get(route('books.searchByIsbn'), {
-            params: { isbn: form.isbn }
+            params: { isbn: form.isbn, source: searchProvider.value }
         });
-        const data = response.data[`ISBN:${form.isbn}`];
+        const data = searchProvider.value === 'google'
+            ? response.data
+            : response.data[`ISBN:${form.isbn}`];
         if (data) {
             form.title = data.title;
-            form.author = data.authors ? data.authors.map(a => a.name).join(', ') : '';
-            form.pages = data.number_of_pages || '';
-            form.published_year = data.publish_date ? String(data.publish_date) : '';
-            form.cover_image = data.cover ? data.cover.large : '';
+            form.author = searchProvider.value === 'google'
+                ? (data.author_name || []).join(', ')
+                : (data.authors || []).map(author => author.name).join(', ');
+            form.pages = searchProvider.value === 'google'
+                ? data.number_of_pages_median || ''
+                : data.number_of_pages || '';
+            form.published_year = searchProvider.value === 'google'
+                ? data.first_publish_year || ''
+                : data.publish_date ? String(data.publish_date) : '';
+            form.cover_image = searchProvider.value === 'google'
+                ? data.cover_url || ''
+                : data.cover ? data.cover.large : '';
+        } else {
+            searchError.value = 'Kein passender Titel gefunden.';
         }
     } catch (error) {
+        searchError.value = error.response?.data?.message || 'Die Buchsuche ist fehlgeschlagen.';
         console.error('Search failed', error);
     } finally {
         searching.value = false;
@@ -253,12 +269,17 @@ const searchByIsbn = async () => {
 const searchByTitle = async () => {
     if (!form.title) return;
     searching.value = true;
+    searchError.value = '';
     try {
         const response = await axios.get(route('books.search'), {
-            params: { title: form.title }
+            params: { title: form.title, source: searchProvider.value }
         });
-        searchResults.value = response.data.docs;
+        searchResults.value = response.data.docs || [];
+        if (searchResults.value.length === 0) {
+            searchError.value = 'Keine passenden Titel gefunden.';
+        }
     } catch (error) {
+        searchError.value = error.response?.data?.message || 'Die Buchsuche ist fehlgeschlagen.';
         console.error('Search failed', error);
     } finally {
         searching.value = false;
@@ -271,7 +292,7 @@ const selectBook = (book) => {
     form.isbn = book.isbn ? book.isbn[0] : '';
     form.pages = book.number_of_pages_median || '';
     form.published_year = book.first_publish_year ? String(book.first_publish_year) : '';
-    form.cover_image = book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg` : '';
+    form.cover_image = book.cover_url || (book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg` : '');
     searchResults.value = [];
 };
 
@@ -304,6 +325,13 @@ const submit = () => {
                     <!-- Search Bar -->
                     <div class="mb-8">
                         <label class="label">Schnellsuche (ISBN oder Titel)</label>
+                        <div class="mb-3">
+                            <label class="label">Datenquelle</label>
+                            <select v-model="searchProvider" class="select select-bordered w-full">
+                                <option value="openlibrary">Open Library</option>
+                                <option value="google">Google Books (Test)</option>
+                            </select>
+                        </div>
                         <div class="flex gap-2">
                             <input v-model="form.isbn" type="text" placeholder="ISBN..." class="input input-bordered flex-1" @keyup.enter="searchByIsbn" />
                             <button @click="searchByIsbn" class="btn btn-primary" :disabled="searching">ISBN Suche</button>
@@ -334,7 +362,8 @@ const submit = () => {
                         </div>
                     </div>
 
-                    <!-- Search Results -->
+                    <p v-if="searchError" class="mb-4 text-sm text-error">{{ searchError }}</p>
+
                     <div v-if="searchResults.length > 0" class="mb-8 p-4 bg-base-200 rounded">
                         <h4 class="font-bold mb-2">Suchergebnisse:</h4>
                         <ul class="space-y-2">
