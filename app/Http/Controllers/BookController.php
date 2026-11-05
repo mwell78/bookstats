@@ -71,7 +71,8 @@ class BookController extends Controller
             });
         }
 
-        $books = $query->orderBy($sortBy, $sortOrder)
+        $books = $query->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', ['Am lesen'])
+            ->orderBy($sortBy, $sortOrder)
             ->paginate(20)
             ->withQueryString();
 
