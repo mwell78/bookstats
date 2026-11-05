@@ -36,7 +36,7 @@ const removeQuote = (index) => {
 
 const searching = ref(false);
 const searchResults = ref([]);
-const searchProvider = ref('openlibrary');
+const searchProvider = ref('google');
 const searchError = ref('');
 const isScannerActive = ref(false);
 let html5QrCode = null;
@@ -230,18 +230,28 @@ onBeforeUnmount(() => {
     }
 });
 
+const normalizeIsbn = (value) => value.replace(/[^0-9X]/gi, '').toUpperCase();
+
 const searchByIsbn = async () => {
-    if (!form.isbn) return;
-    searching.value = true;
+    const isbn = normalizeIsbn(form.isbn);
+    form.isbn = isbn;
     searchError.value = '';
+    searchResults.value = [];
+
+    if (!isbn) {
+        searchError.value = 'Bitte eine ISBN eingeben.';
+        return;
+    }
+
+    searching.value = true;
     try {
         const response = await axios.get(route('books.searchByIsbn'), {
-            params: { isbn: form.isbn, source: searchProvider.value }
+            params: { isbn, source: searchProvider.value }
         });
         const data = searchProvider.value === 'google'
             ? response.data
-            : response.data[`ISBN:${form.isbn}`];
-        if (data) {
+            : response.data?.[`ISBN:${isbn}`];
+        if (data?.title) {
             form.title = data.title;
             form.author = searchProvider.value === 'google'
                 ? (data.author_name || []).join(', ')
@@ -325,13 +335,13 @@ const submit = () => {
                     <!-- Search Bar -->
                     <div class="mb-8">
                         <label class="label">Schnellsuche (ISBN oder Titel)</label>
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label class="label">Datenquelle</label>
                             <select v-model="searchProvider" class="select select-bordered w-full">
                                 <option value="openlibrary">Open Library</option>
-                                <option value="google">Google Books (Test)</option>
+                                <option value="google">Google Books</option>
                             </select>
-                        </div>
+                        </div> -->
                         <div class="flex gap-2">
                             <input v-model="form.isbn" type="text" placeholder="ISBN..." class="input input-bordered flex-1" @keyup.enter="searchByIsbn" />
                             <button @click="searchByIsbn" class="btn btn-primary" :disabled="searching">ISBN Suche</button>
@@ -474,7 +484,7 @@ const submit = () => {
                             <InputError :message="form.errors[`quotes.${index}.content`]" class="mt-1" />
                             <InputError :message="form.errors[`quotes.${index}.page`]" class="mt-1" />
                         </div>
-                        
+
                         <button @click.prevent="addQuote" class="btn btn-outline btn-sm w-full mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                             Zitat hinzufügen

@@ -294,7 +294,7 @@ class BookController extends Controller
 
     public function searchByIsbn(Request $request)
     {
-        $isbn = $request->query('isbn');
+        $isbn = preg_replace('/[^0-9X]/i', '', (string) $request->query('isbn', ''));
 
         if ($request->query('source', 'openlibrary') === 'google') {
             $apiKey = config('services.google_books.key');

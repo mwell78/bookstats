@@ -61,7 +61,7 @@ test('Google Books ISBN search returns a normalized book', function () {
     ]);
 
     $response = $this->actingAs(User::factory()->create())->get(route('books.searchByIsbn', [
-        'isbn' => '9783608939842',
+        'isbn' => "\u{200E} 978-3641299316",
         'source' => 'google',
     ]));
 
@@ -69,7 +69,7 @@ test('Google Books ISBN search returns a normalized book', function () {
         ->assertJsonPath('title', 'Der Hobbit')
         ->assertJsonPath('author_name.0', 'J. R. R. Tolkien');
 
-    Http::assertSent(fn ($request) => $request['q'] === 'isbn:9783608939842'
+    Http::assertSent(fn ($request) => $request['q'] === 'isbn:9783641299316'
         && $request['key'] === 'test-api-key');
 });
 
